@@ -1,0 +1,6 @@
+Flask==2.3.2
+Werkzeug==2.3.6
+pandas==2.1.1
+matplotlib==3.8.0
+openpyxl==3.1.2
+xlrd==2.0.1
