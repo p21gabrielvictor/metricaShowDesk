@@ -59,10 +59,7 @@ def process_excel(file_path):
     # Calcular a diferença entre o prazo e a resolução
     df['Dias de diferença'] = (pd.to_datetime(df['Hora de resolução']) - pd.to_datetime(df['Primeiro prazo'], dayfirst=True)).dt.days
 
-    # Definir status (No prazo, Fora do prazo, Sem prazo)
-    df['Status'] = df.apply(lambda row: 'No prazo' if row['Dias de diferença'] <= 0 else 'Fora do prazo', axis=1)
-
-    # Ajuste para Fora do prazo e Sem prazo
+    # Ajustar status (No prazo, Fora do prazo, Sem prazo)
     df['Status'] = df.apply(
         lambda row: 'Fora do prazo' if row['Dias de diferença'] > 0 else ('Sem prazo' if pd.isna(row['Primeiro prazo']) else 'No prazo'),
         axis=1
@@ -163,4 +160,4 @@ def download_file():
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
