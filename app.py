@@ -33,8 +33,8 @@ def process_excel(file_path):
 
     # Ajustar os nomes das colunas se necessário
     expected_columns = {
-        'ID do Ticket': 'ID do Ticket',
-        'Hora de resolução': 'Hora de resolução',
+        'ID do ticket': 'ID do ticket',
+        'Hora da resolução': 'Hora da resolução',
         'Primeiro prazo': 'Primeiro prazo'
     }
 
@@ -50,14 +50,14 @@ def process_excel(file_path):
     if missing_columns:
         raise ValueError(f"Colunas esperadas não encontradas: {', '.join(missing_columns)}")
 
-    # Tratar a coluna 'Hora de resolução' - extraindo apenas a data
-    df['Hora de resolução'] = pd.to_datetime(df['Hora de resolução'], errors='coerce').dt.date
+    # Tratar a coluna 'Hora da resolução' - extraindo apenas a data
+    df['Hora da resolução'] = pd.to_datetime(df['Hora da resolução'], errors='coerce').dt.date
 
     # Tratar a coluna 'Primeiro prazo' - converter para DD/MM/AAAA
     df['Primeiro prazo'] = pd.to_datetime(df['Primeiro prazo'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
 
     # Calcular a diferença entre o prazo e a resolução
-    df['Dias de diferença'] = (pd.to_datetime(df['Hora de resolução']) - pd.to_datetime(df['Primeiro prazo'], dayfirst=True)).dt.days
+    df['Dias de diferença'] = (pd.to_datetime(df['Hora da resolução']) - pd.to_datetime(df['Primeiro prazo'], dayfirst=True)).dt.days
 
     # Ajustar status (No prazo, Fora do prazo, Sem prazo)
     df['Status'] = df.apply(
