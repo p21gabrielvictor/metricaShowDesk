@@ -16,16 +16,20 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Função para limpar arquivos antigos antes de salvar um novo
+def clear_upload_folder():
+    for file in os.listdir(UPLOAD_FOLDER):
+        file_path = os.path.join(UPLOAD_FOLDER, file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
 # Função para processar a planilha
 def process_excel(file_path):
     # Verificar a extensão do arquivo
     file_extension = os.path.splitext(file_path)[1]
-    
     if file_extension == '.xls':
-        # Para arquivos .xls, usar o engine 'xlrd'
         df = pd.read_excel(file_path, engine='xlrd')
     else:
-        # Para arquivos .xlsx, usar o engine 'openpyxl'
         df = pd.read_excel(file_path, engine='openpyxl')
 
     # Verificar as colunas do DataFrame
@@ -38,7 +42,6 @@ def process_excel(file_path):
         'Primeiro prazo': 'Primeiro prazo'
     }
 
-    # Renomear colunas se necessário
     for original, corrected in expected_columns.items():
         if original in df.columns:
             df.rename(columns={original: corrected}, inplace=True)
@@ -50,18 +53,23 @@ def process_excel(file_path):
     if missing_columns:
         raise ValueError(f"Colunas esperadas não encontradas: {', '.join(missing_columns)}")
 
-    # Tratar a coluna 'Hora da resolução' - extraindo apenas a data
+    # Tratar as colunas de datas
     df['Hora da resolução'] = pd.to_datetime(df['Hora da resolução'], errors='coerce').dt.date
+    df['Primeiro prazo'] = pd.to_datetime(df['Primeiro prazo'], dayfirst=True, errors='coerce')
 
-    # Tratar a coluna 'Primeiro prazo' - converter para DD/MM/AAAA
-    df['Primeiro prazo'] = pd.to_datetime(df['Primeiro prazo'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
+    # Verificar se há datas inválidas
+    invalid_dates = df[df['Primeiro prazo'].isna()]
+    if not invalid_dates.empty:
+        print(f"Datas inválidas encontradas na coluna 'Primeiro prazo':\n{invalid_dates[['ID do ticket', 'Primeiro prazo']]}")
 
     # Calcular a diferença entre o prazo e a resolução
-    df['Dias de diferença'] = (pd.to_datetime(df['Hora da resolução']) - pd.to_datetime(df['Primeiro prazo'], dayfirst=True)).dt.days
+    df['Dias de diferença'] = (pd.to_datetime(df['Hora da resolução']) - df['Primeiro prazo']).dt.days
 
     # Ajustar status (No prazo, Fora do prazo, Sem prazo)
     df['Status'] = df.apply(
-        lambda row: 'Fora do prazo' if row['Dias de diferença'] > 0 else ('Sem prazo' if pd.isna(row['Primeiro prazo']) else 'No prazo'),
+        lambda row: 'Sem prazo' if pd.isna(row['Primeiro prazo']) else (
+            'Fora do prazo' if row['Dias de diferença'] > 0 else 'No prazo'
+        ),
         axis=1
     )
 
@@ -70,17 +78,19 @@ def process_excel(file_path):
     no_prazo = len(df[df['Status'] == 'No prazo'])
     fora_prazo = len(df[df['Status'] == 'Fora do prazo'])
     sem_prazo = len(df[df['Status'] == 'Sem prazo'])
-    total_tickets_percent = 100
 
-    # Calcular as porcentagens
-    no_prazo_percent = (no_prazo / total_tickets) * 100
-    fora_prazo_percent = (fora_prazo / total_tickets) * 100
-    sem_prazo_percent = (sem_prazo / total_tickets) * 100
+    # Evitar divisão por zero
+    if total_tickets > 0:
+        no_prazo_percent = (no_prazo / total_tickets) * 100
+        fora_prazo_percent = (fora_prazo / total_tickets) * 100
+        sem_prazo_percent = (sem_prazo / total_tickets) * 100
+    else:
+        no_prazo_percent = fora_prazo_percent = sem_prazo_percent = 0
 
     # Criar um DataFrame para armazenar as porcentagens e quantidades
     porcentagens_df = pd.DataFrame({
         'Status': ['No prazo', 'Fora do prazo', 'Sem prazo', 'Total'],
-        'Porcentagem (%)': [no_prazo_percent, fora_prazo_percent, sem_prazo_percent, total_tickets_percent],
+        'Porcentagem (%)': [no_prazo_percent, fora_prazo_percent, sem_prazo_percent, 100],
         'Quantidade': [no_prazo, fora_prazo, sem_prazo, total_tickets]
     })
 
@@ -109,28 +119,21 @@ def process_excel(file_path):
     wb = load_workbook(output_file)
     ws = wb['Porcentagens']
 
-    # Criar gráfico de pizza
     pie = PieChart()
-    labels = Reference(ws, min_col=1, min_row=2, max_row=4)  # 'Status' column
-    data = Reference(ws, min_col=3, min_row=1, max_row=4)  # 'Quantidade' column
-    pie.add_data(data, titles_from_data=True)
+    labels = Reference(ws, min_col=1, min_row=2, max_row=4)
+    data = Reference(ws, min_col=3, min_row=2, max_row=4)
+    pie.add_data(data, titles_from_data=False)
     pie.set_categories(labels)
     pie.title = "Distribuição de Tickets"
 
-    # Adicionar o gráfico à planilha
     ws.add_chart(pie, "E5")
-
-    # Salvar o arquivo com o gráfico
     wb.save(output_file)
 
-    # Retorna o DataFrame, o caminho do arquivo e os gráficos em base64
     return df, output_file, graph_data
 
-# Rota principal para upload do arquivo
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        # Verifica se o arquivo foi enviado
         if 'file' not in request.files:
             return 'Nenhum arquivo enviado'
 
@@ -138,12 +141,12 @@ def upload_file():
         if file.filename == '':
             return 'Nenhum arquivo selecionado'
 
-        # Salva o arquivo no diretório uploads
+        # Limpar arquivos antigos e salvar o novo arquivo
+        clear_upload_folder()
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
-        # Processa o arquivo Excel e gera resultados
         try:
             df, output_file, graph_data = process_excel(file_path)
             return render_template('result.html', graph_data=graph_data)
@@ -152,7 +155,6 @@ def upload_file():
 
     return render_template('upload.html')
 
-# Página de resultados com gráfico
 @app.route('/download')
 def download_file():
     return send_file(os.path.join(UPLOAD_FOLDER, 'output.xlsx'), as_attachment=True)
