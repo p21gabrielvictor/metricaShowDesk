@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tickets Fora do Prazo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Tickets Fora do Prazo</h1>
+
+        <!-- Modal de Tickets Fora do Prazo -->
+        <div class="modal fade" id="foraDoPrazoModal" tabindex="-1" aria-labelledby="foraDoPrazoModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="foraDoPrazoModalLabel">Detalhes dos Tickets Fora do Prazo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% if tickets %}
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>ID do Ticket</th>
+                                        <th>Primeiro Prazo</th>
+                                        <th>Hora da Resolução</th>
+                                        <th>Dias de Diferença</th>
+                                        <th>Link para o Ticket</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ticket in tickets %}
+                                        <tr>
+                                            <td>{{ ticket['ID do ticket'] }}</td>
+                                            <td>{{ ticket['Primeiro prazo'] }}</td>
+                                            <td>{{ ticket['Hora da resolução'] }}</td>
+                                            <td>{{ ticket['Dias de diferença'] }}</td>
+                                            <td>{{ ticket['Link']|safe }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p>Não há tickets fora do prazo.</p>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Button to trigger modal -->
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#foraDoPrazoModal">
+            Ver Detalhes dos Tickets Fora do Prazo
+        </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.1/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

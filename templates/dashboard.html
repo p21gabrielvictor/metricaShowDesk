@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Tickets</title>
+</head>
+<body>
+    <h1>Dashboard de Resultados</h1>
+
+    <div>
+        <h2>No Prazo</h2>
+        <table>
+            <tr><th>ID</th><th>Hora da Resolução</th></tr>
+            {% for item in no_prazo %}
+                <tr><td>{{ item['ID do ticket'] }}</td><td>{{ item['Hora da resolução'] }}</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div>
+        <h2>Fora do Prazo</h2>
+        <table>
+            <tr><th>ID</th><th>Hora da Resolução</th></tr>
+            {% for item in fora_prazo %}
+                <tr><td>{{ item['ID do ticket'] }}</td><td>{{ item['Hora da resolução'] }}</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div>
+        <h2>Sem Prazo</h2>
+        <table>
+            <tr><th>ID</th><th>Hora da Resolução</th></tr>
+            {% for item in sem_prazo %}
+                <tr><td>{{ item['ID do ticket'] }}</td><td>{{ item['Hora da resolução'] }}</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <a href="{{ output_file }}">Baixar arquivo processado</a>
+</body>
+</html>
