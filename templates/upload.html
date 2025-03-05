@@ -8,10 +8,37 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center mt-5">Enviar Planilha Excel</h1>
+        <h1 class="text-center mt-5">Métrica OKR ShowDesk</h1>
+
+        <div>
+            <label>
+                <p>Utilize o filtro compartilhado <strong>Métrica</strong> ou Crie o filtro seguindo o passo a passo:</p>
+                Utilize os seguintes filtros para extrair a planilha no FreshDesk.  
+                <strong>Não se esqueça de salvar o filtro</strong> para facilitar futuras exportações:
+            </label>
+            <ul>
+                <li><strong>Agente:</strong> Incluir todos os membros do ShowDesk.</li>
+                <li><strong>Grupo:</strong> Selecionar "ShowDesk".</li>
+                <li><strong>Status:</strong> Incluir "Resolvido" e "Fechado".</li>
+                <li><strong>Tipos:</strong> Incluir todos, exceto "Mesclado".</li>
+            </ul>
+        
+            <label>
+                Após configurar os filtros, clique no botão <strong>Exportar</strong> e preencha os campos da seguinte forma:
+            </label>
+            <ul>
+                <li><strong>Exportar como:</strong> Excel.</li>
+                <li><strong>Filtrar tickets por:</strong> Hora da Resolução.</li>
+                <li><strong>Período:</strong> Selecionar o quarter correspondente.</li>
+                <li><strong>Baixar arquivo:</strong> Após a exportação, o arquivo será enviado para seu e-mail ou poderá ser baixado clicando no botão "Aqui" na tela de exportação de tickets.</li>
+            </ul>
+        
+            <p><strong>Importante:</strong> O sistema aceita apenas arquivos no formato <code>.xlsx</code>.  
+            O FreshDesk exporta os arquivos como <code>.xls</code>, então é necessário abrir o arquivo e salvá-lo no formato <code>.xlsx</code> antes de utilizá-lo.</p>
+        </div>
         <form method="POST" enctype="multipart/form-data" class="mt-4">
             <div class="mb-3">
-                <label for="file" class="form-label">Selecione o Arquivo</label>
+                <label for="file" class="form-label">Selecione o Arquivo xlsx:</label>
                 <input type="file" class="form-control" id="file" name="file" required>
             </div>
             <button type="submit" class="btn btn-primary">Enviar</button>
