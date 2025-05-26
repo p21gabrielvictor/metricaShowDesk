@@ -4,31 +4,46 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import base64
+import locale
+from contextlib import contextmanager
+from dateutil import parser
 from flask import Flask, request, render_template, send_file
 from openpyxl import load_workbook
 from werkzeug.utils import secure_filename
 
-# Configurar Matplotlib para não usar interface gráfica
 matplotlib.use('Agg')
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Função para limpar arquivos antigos antes de salvar um novo
 def clear_upload_folder():
     for file in os.listdir(UPLOAD_FOLDER):
         file_path = os.path.join(UPLOAD_FOLDER, file)
         if os.path.isfile(file_path):
             os.remove(file_path)
 
-# Função para processar a planilha
+def set_locale_temporarily(loc):
+    current = locale.getlocale(locale.LC_TIME)
+    try:
+        locale.setlocale(locale.LC_TIME, loc)
+        yield
+    finally:
+        locale.setlocale(locale.LC_TIME, current)
+
 def process_excel(file_path):
-    file_extension = os.path.splitext(file_path)[1]
-    if file_extension == '.xls':
-        df = pd.read_excel(file_path, engine='xlrd')
+    file_extension = os.path.splitext(file_path)[1].lower()
+
+    if file_extension == '.csv':
+        try:
+            df = pd.read_csv(file_path, encoding='utf-8', sep=',')
+        except UnicodeDecodeError:
+            df = pd.read_csv(file_path, encoding='latin1', sep=',')
+    elif file_extension in ['.xls', '.xlsx']:
+        engine = 'xlrd' if file_extension == '.xls' else 'openpyxl'
+        df = pd.read_excel(file_path, engine=engine)
     else:
-        df = pd.read_excel(file_path, engine='openpyxl')
+        raise ValueError("Formato de arquivo não suportado. Envie um arquivo .xlsx, .xls ou .csv")
 
     expected_columns = {
         'ID do ticket': 'ID do ticket',
@@ -44,12 +59,19 @@ def process_excel(file_path):
     if missing_columns:
         raise ValueError(f"Colunas esperadas não encontradas: {', '.join(missing_columns)}")
 
-    df['Hora da resolução'] = pd.to_datetime(df['Hora da resolução'], errors='coerce').dt.date
-    df['Primeiro prazo'] = pd.to_datetime(df['Primeiro prazo'], dayfirst=True, errors='coerce')
-    df['Dias de diferença'] = (pd.to_datetime(df['Hora da resolução']) - df['Primeiro prazo']).dt.days
+    df['Hora da resolução'] = pd.to_datetime(df['Hora da resolução'], errors='coerce')
+
+    # Tentativa 1: padrão brasileiro (dayfirst)
+    df['Primeiro prazo'] = df['Primeiro prazo'].apply(
+        lambda x: parser.parse(x, dayfirst=True) if pd.notna(x) else pd.NaT
+    )
+
+ 
+
+    df['Dias de diferença'] = (df['Hora da resolução'] - df['Primeiro prazo']).dt.days
 
     df['Status'] = df.apply(
-        lambda row: 'Sem prazo' if pd.isna(row['Primeiro prazo']) else (
+        lambda row: 'Sem prazo' if pd.isna(row['Primeiro prazo']) or pd.isna(row['Hora da resolução']) else (
             'Fora do prazo' if row['Dias de diferença'] > 0 else 'No prazo'
         ),
         axis=1
@@ -119,18 +141,13 @@ def upload_file():
 @app.route('/fora_do_prazo')
 def fora_do_prazo():
     if tickets_fora_prazo.empty:
-        print("Não há tickets fora do prazo.")  # Log de depuração
+        print("Não há tickets fora do prazo.")
         return render_template('fora_do_prazo.html', tickets=[])
 
-    # Calcular os dias de diferença para cada ticket
     tickets_fora_prazo['Dias de diferença'] = (tickets_fora_prazo['Hora da resolução'] - tickets_fora_prazo['Primeiro prazo']).dt.days
-
-    # Criar link para o ticket
     tickets_fora_prazo['Link'] = tickets_fora_prazo['ID do ticket'].apply(
         lambda x: f'<a href="https://atendimento.p21sistemas.com.br/a/tickets/{x}" target="_blank">Ticket {x}</a>'
     )
-
-    # Retornar para a página com os tickets fora do prazo
     return render_template('fora_do_prazo.html', tickets=tickets_fora_prazo.to_dict(orient='records'))
 
 @app.route('/download')
