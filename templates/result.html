@@ -3,136 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultado da Análise</title>
+    <title>Dashboard de Métricas</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.1/css/bootstrap.min.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
     <style>
         body {
-            background-color: #f8f9fa;
-            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            font-family: 'Poppins', sans-serif;
+            color: #555;
         }
-        .dashboard {
-            padding: 20px;
+        .dashboard-container {
+            padding: 30px;
         }
-        .card {
+        .stat-card {
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+        }
+        .stat-card .icon {
+            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            line-height: 60px;
             text-align: center;
-            padding: 20px;
-            margin-bottom: 20px;
+            border-radius: 50%;
+            margin-right: 20px;
         }
-        .chart-container {
-            text-align: center;
-            margin-top: 30px;
+        .stat-card .icon.icon-success { color: #28a745; background-color: rgba(40, 167, 69, 0.1); }
+        .stat-card .icon.icon-danger { color: #dc3545; background-color: rgba(220, 53, 69, 0.1); }
+        .stat-card .icon.icon-secondary { color: #6c757d; background-color: rgba(108, 117, 125, 0.1); }
+        .stat-card .info h5 {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
         }
-        .chart-container img {
+        .stat-card .info p {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+        .content-panel {
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+            height: 100%;
+        }
+        .content-panel img {
             max-width: 100%;
             height: auto;
         }
-        .table-container {
-            margin-top: 30px;
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            color: #343a40;
         }
-        .btn-container {
-            margin-top: 30px;
-            text-align: center;
+        .table {
+            vertical-align: middle;
         }
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-        th {
-            background-color: #f0f0f0;
+        .table-striped > tbody > tr:nth-of-type(odd) > * {
+            background-color: #fcfdff;
         }
     </style>
 </head>
 <body>
-    <div class="container dashboard">
-        <h1 class="text-center mb-4">Métrica ShowDesk</h1>
-        <!-- Buttons -->
-        <div class="btn-container">
-            <a href="https://metricashowdesk.onrender.com/" class="btn btn-primary">Voltar</a>
-            <a href="{{ url_for('download_file') }}" class="btn btn-primary">Baixar Planilha Processada</a>
+
+<div class="container-fluid dashboard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <h1 class="h2">Dashboard de Métricas</h1>
+        <div>
+            <a href="https://metricashowdesk.onrender.com/" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Nova Análise
+            </a>
+            <a href="{{ url_for('download_file') }}" class="btn btn-primary">
+                <i class="fas fa-download me-1"></i> Baixar Planilha
+            </a>
         </div>
     </div>
-        <!-- Cards de resumo -->
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card bg-success text-white">
-                    <h4>No Prazo</h4>
-                    <h3>{{ no_prazo }}</h3>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card bg-danger text-white">
-                    <h4>Fora do Prazo</h4>
-                    <h3>{{ fora_prazo }}</h3>
-                
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card bg-secondary text-white">
-                    <h4>Sem Prazo</h4>
-                    <h3>{{ sem_prazo }}</h3>
+
+    <h3 class="mt-4 mb-3">Visão Geral</h3>
+    <div class="row">
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="stat-card">
+                <div class="icon icon-success"><i class="fas fa-check-circle"></i></div>
+                <div class="info">
+                    <h5>No Prazo</h5>
+                    <p>{{ no_prazo }}</p>
                 </div>
             </div>
         </div>
-
-        <!-- Gráfico -->
-        <div class="chart-container">
-            <h4 class="mb-4">Distribuição por Status</h4>
-            <img src="data:image/png;base64,{{ graph_data }}" alt="Gráfico de Status">
-        </div>
-
-        <!-- Tabela de ranking -->
-        <div class="table-container">
-            <h4>Ranking de Clientes</h4>
-            {{ ranking | safe }}
-        </div>
-
-
-
-    <!-- Modal de Tickets Fora do Prazo -->
-    <div class="modal fade" id="foraDoPrazoModal" tabindex="-1" aria-labelledby="foraDoPrazoModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="foraDoPrazoModalLabel">Detalhes dos Tickets Fora do Prazo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="stat-card">
+                <div class="icon icon-danger"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="info">
+                    <h5>Fora do Prazo</h5>
+                    <p>{{ fora_prazo }}</p>
                 </div>
-                <div class="modal-body">
-                    {% if tickets %}
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>ID do Ticket</th>
-                                    <th>Primeiro Prazo</th>
-                                    <th>Hora da Resolução</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for ticket in tickets %}
-                                    <tr>
-                                        <td>{{ ticket['ID do ticket'] }}</td>
-                                        <td>{{ ticket['Primeiro prazo'] }}</td>
-                                        <td>{{ ticket['Hora da resolução'] }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p>Não há tickets fora do prazo.</p>
-                    {% endif %}
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="stat-card">
+                <div class="icon icon-secondary"><i class="fas fa-question-circle"></i></div>
+                <div class="info">
+                    <h5>Sem Prazo</h5>
+                    <p>{{ sem_prazo }}</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.1/js/bootstrap.bundle.min.js"></script>
+    <h3 class="mt-4 mb-3">Análise de Prazos</h3>
+    <div class="row">
+        <div class="col-lg-5 mb-4">
+            <div class="content-panel">
+                <h5 class="mb-3">Distribuição por Status</h5>
+                <img src="data:image/png;base64,{{ graph_data_prazo }}" alt="Gráfico de Status">
+            </div>
+        </div>
+        <div class="col-lg-7 mb-4">
+            <div class="content-panel">
+                <h5 class="mb-3">Ranking de Clientes</h5>
+                {{ ranking | safe }}
+            </div>
+        </div>
+    </div>
+    
+    {% if qualidade_results %}
+    <h3 class="mt-4 mb-3">Análise de Qualidade</h3>
+    <div class="row">
+        <div class="col-lg-7 mb-4">
+            <div class="content-panel">
+                <h5 class="mb-3">Desempenho por Pergunta</h5>
+                <img src="data:image/png;base64,{{ qualidade_results.graph_data }}" alt="Gráfico de Qualidade">
+            </div>
+        </div>
+        <div class="col-lg-5 mb-4">
+            <div class="content-panel">
+                <h5 class="mb-3">Tabela de Resumo</h5>
+                {{ qualidade_results.resumo_df.to_html(classes="table table-striped", index=False)|safe }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.1/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
